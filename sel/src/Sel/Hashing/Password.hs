@@ -59,6 +59,8 @@ import Foreign hiding (void)
 import Foreign.C
 import System.IO.Unsafe (unsafeDupablePerformIO)
 
+import Sel.Internal
+
 import LibSodium.Bindings.PasswordHashing
 import LibSodium.Bindings.Random
 
@@ -73,6 +75,19 @@ import LibSodium.Bindings.Random
 --
 -- @since 0.0.1.0
 newtype PasswordHash = PasswordHash (ForeignPtr CChar)
+
+instance Eq PasswordHash where
+  (PasswordHash ph1) == (PasswordHash ph2) =
+    unsafeDupablePerformIO $
+      foreignPtrEq ph1 ph2 cryptoPWHashStrBytes
+
+instance Ord PasswordHash where
+  (PasswordHash ph1) `compare` (PasswordHash ph2) =
+    unsafeDupablePerformIO $
+      foreignPtrOrd ph1 ph2 cryptoPWHashStrBytes
+
+instance Show PasswordHash where
+  show (PasswordHash fptr) = foreignPtrShow fptr cryptoPWHashStrBytes
 
 -- | @since 0.0.1.0
 instance Display PasswordHash where
@@ -181,6 +196,7 @@ passwordHashToHexText = Base16.encodeBase16 . passwordHashToBinary
 --
 -- @since 0.0.1.0
 newtype Salt = Salt StrictByteString
+  deriving (Eq, Ord, Show)
 
 -- | Convert 'Salt to underlying 'StrictByteString' binary.
 --
